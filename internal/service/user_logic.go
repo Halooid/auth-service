@@ -63,6 +63,38 @@ func (s *UserBusinessLogic) Login(ctx context.Context, username, password string
 	return s.keycloak.Login(ctx, username, password)
 }
 
+type RegisterResult struct {
+	User         *db.User
+	AccessToken  string
+	RefreshToken string
+}
+
+func (s *UserBusinessLogic) Register(ctx context.Context, username, email, password string) (*RegisterResult, error) {
+	// 1. Create in Keycloak
+	extID, err := s.keycloak.Register(ctx, username, email, password)
+	if err != nil {
+		return nil, fmt.Errorf("keycloak registration failed: %w", err)
+	}
+
+	// 2. Sync to local DB
+	user, err := s.GetOrCreateUser(ctx, extID, email, username, "")
+	if err != nil {
+		return nil, fmt.Errorf("local sync failed: %w", err)
+	}
+
+	// 3. Log in to get tokens
+	tokens, err := s.keycloak.Login(ctx, username, password)
+	if err != nil {
+		return nil, fmt.Errorf("login after registration failed: %w", err)
+	}
+
+	return &RegisterResult{
+		User:         user,
+		AccessToken:  tokens.AccessToken,
+		RefreshToken: tokens.RefreshToken,
+	}, nil
+}
+
 func (s *UserBusinessLogic) RefreshToken(ctx context.Context, refreshToken string) (*TokenResponse, error) {
 	return s.keycloak.RefreshToken(ctx, refreshToken)
 }
@@ -75,5 +107,8 @@ func (s *UserBusinessLogic) ValidateToken(ctx context.Context, token string) (*d
 
 	// Sync or get user
 	return s.GetOrCreateUser(ctx, claims.Subject, claims.Email, claims.PreferredUsername, claims.TenantID)
+}
 
+func (s *UserBusinessLogic) GetCurrentUser(ctx context.Context, token string) (*db.User, error) {
+	return s.ValidateToken(ctx, token)
 }

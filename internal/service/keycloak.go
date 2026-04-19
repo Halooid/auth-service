@@ -70,3 +70,35 @@ func (c *KeycloakClient) GetUserInfo(ctx context.Context, accessToken string) (*
 	}
 	return userInfo, nil
 }
+
+func (c *KeycloakClient) Register(ctx context.Context, username, email, password string) (string, error) {
+	// 1. Get admin token using client credentials
+	token, err := c.client.GetToken(ctx, c.Realm, gocloak.TokenOptions{
+		GrantType:    gocloak.StringP("client_credentials"),
+		ClientID:     &c.ClientID,
+		ClientSecret: &c.ClientSecret,
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to get admin token: %w", err)
+	}
+
+	// 2. Create User
+	user := gocloak.User{
+		Username: gocloak.StringP(username),
+		Email:    gocloak.StringP(email),
+		Enabled:  gocloak.BoolP(true),
+	}
+
+	userID, err := c.client.CreateUser(ctx, token.AccessToken, c.Realm, user)
+	if err != nil {
+		return "", fmt.Errorf("failed to create user in keycloak: %w", err)
+	}
+
+	// 3. Set Password
+	err = c.client.SetPassword(ctx, token.AccessToken, userID, c.Realm, password, false)
+	if err != nil {
+		return "", fmt.Errorf("failed to set user password in keycloak: %w", err)
+	}
+
+	return userID, nil
+}
