@@ -19,4 +19,6 @@ type User struct {
 	TenantID   sql.NullString `json:"tenant_id"`
 	CreatedAt  time.Time      `json:"created_at"`
 	UpdatedAt  time.Time      `json:"updated_at"`
+	FirstName  string         `json:"first_name"`
+	LastName   string         `json:"last_name"`
 }

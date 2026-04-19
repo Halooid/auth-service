@@ -21,7 +21,7 @@ func NewAuthHandler(logic *service.UserBusinessLogic) *AuthHandler {
 }
 
 func (h *AuthHandler) GetOrCreateUser(ctx context.Context, req *authv1.GetOrCreateUserRequest) (*authv1.GetOrCreateUserResponse, error) {
-	user, err := h.logic.GetOrCreateUser(ctx, req.ExternalId, req.Email, req.Username, req.TenantId)
+	user, err := h.logic.GetOrCreateUser(ctx, req.ExternalId, req.Email, req.Username, req.TenantId, req.FirstName, req.LastName)
 	if err != nil {
 		return nil, err
 	}
@@ -33,6 +33,8 @@ func (h *AuthHandler) GetOrCreateUser(ctx context.Context, req *authv1.GetOrCrea
 			Email:      user.Email,
 			Username:   user.Username,
 			TenantId:   user.TenantID.String,
+			FirstName:  user.FirstName,
+			LastName:   user.LastName,
 		},
 	}, nil
 }
@@ -51,6 +53,8 @@ func (h *AuthHandler) GetUserById(ctx context.Context, req *authv1.GetUserByIdRe
 			Email:      user.Email,
 			Username:   user.Username,
 			TenantId:   user.TenantID.String,
+			FirstName:  user.FirstName,
+			LastName:   user.LastName,
 		},
 	}, nil
 }
@@ -71,7 +75,7 @@ func (h *AuthHandler) Login(ctx context.Context, req *authv1.LoginRequest) (*aut
 }
 
 func (h *AuthHandler) Register(ctx context.Context, req *authv1.RegisterRequest) (*authv1.RegisterResponse, error) {
-	resp, err := h.logic.Register(ctx, req.Username, req.Email, req.Password)
+	resp, err := h.logic.Register(ctx, req.Username, req.Email, req.Password, req.FirstName, req.LastName)
 	if err != nil {
 		return nil, err
 	}
@@ -83,6 +87,8 @@ func (h *AuthHandler) Register(ctx context.Context, req *authv1.RegisterRequest)
 			Email:      resp.User.Email,
 			Username:   resp.User.Username,
 			TenantId:   resp.User.TenantID.String,
+			FirstName:  resp.User.FirstName,
+			LastName:   resp.User.LastName,
 		},
 		AccessToken:      resp.AccessToken,
 		RefreshToken:     resp.RefreshToken,
@@ -121,6 +127,8 @@ func (h *AuthHandler) ValidateToken(ctx context.Context, req *authv1.ValidateTok
 			Email:      user.Email,
 			Username:   user.Username,
 			TenantId:   user.TenantID.String,
+			FirstName:  user.FirstName,
+			LastName:   user.LastName,
 		},
 	}, nil
 }
@@ -152,6 +160,8 @@ func (h *AuthHandler) GetCurrentUser(ctx context.Context, req *authv1.GetCurrent
 			Email:      user.Email,
 			Username:   user.Username,
 			TenantId:   user.TenantID.String,
+			FirstName:  user.FirstName,
+			LastName:   user.LastName,
 		},
 	}, nil
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/halooid/backend/auth-service/internal/handler"
 	"github.com/halooid/backend/auth-service/internal/service"
 	"github.com/halooid/backend/go-shared/auth"
+	"github.com/halooid/backend/go-shared/logging"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"google.golang.org/grpc"
@@ -57,7 +58,9 @@ func main() {
 	logic := service.NewUserBusinessLogic(queries, keycloak, validator)
 	authHandler := handler.NewAuthHandler(logic)
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(logging.UnaryServerInterceptor()),
+	)
 	authv1.RegisterAuthServiceServer(grpcServer, authHandler)
 
 	// Register reflection for debugging

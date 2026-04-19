@@ -25,7 +25,7 @@ func NewUserBusinessLogic(repo db.Querier, keycloak *KeycloakClient, validator *
 	}
 }
 
-func (s *UserBusinessLogic) GetOrCreateUser(ctx context.Context, extID, email, username, tenantID string) (*db.User, error) {
+func (s *UserBusinessLogic) GetOrCreateUser(ctx context.Context, extID, email, username, tenantID, firstName, lastName string) (*db.User, error) {
 	user, err := s.repo.GetUserByExternalID(ctx, extID)
 	if err == nil {
 		return &user, nil
@@ -37,6 +37,8 @@ func (s *UserBusinessLogic) GetOrCreateUser(ctx context.Context, extID, email, u
 		Email:      email,
 		Username:   username,
 		TenantID:   sql.NullString{String: tenantID, Valid: tenantID != ""},
+		FirstName:  firstName,
+		LastName:   lastName,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
@@ -69,23 +71,25 @@ type RegisterResult struct {
 	RefreshToken string
 }
 
-func (s *UserBusinessLogic) Register(ctx context.Context, username, email, password string) (*RegisterResult, error) {
+func (s *UserBusinessLogic) Register(ctx context.Context, username, email, password, firstName, lastName string) (*RegisterResult, error) {
 	// 1. Create in Keycloak
-	extID, err := s.keycloak.Register(ctx, username, email, password)
+	extID, err := s.keycloak.Register(ctx, username, email, password, firstName, lastName)
 	if err != nil {
 		return nil, fmt.Errorf("keycloak registration failed: %w", err)
 	}
 
 	// 2. Sync to local DB
-	user, err := s.GetOrCreateUser(ctx, extID, email, username, "")
+	// Use GetOrCreateUser which handles both new and existing records
+	user, err := s.GetOrCreateUser(ctx, extID, email, username, "", firstName, lastName)
 	if err != nil {
 		return nil, fmt.Errorf("local sync failed: %w", err)
 	}
 
 	// 3. Log in to get tokens
-	tokens, err := s.keycloak.Login(ctx, username, password)
+	// NOTE: Use email for login because Keycloak is configured to use email as username
+	tokens, err := s.keycloak.Login(ctx, email, password)
 	if err != nil {
-		return nil, fmt.Errorf("login after registration failed: %w", err)
+		return nil, fmt.Errorf("login after registration failed (tried using email %s): %w", email, err)
 	}
 
 	return &RegisterResult{
@@ -106,7 +110,7 @@ func (s *UserBusinessLogic) ValidateToken(ctx context.Context, token string) (*d
 	}
 
 	// Sync or get user
-	return s.GetOrCreateUser(ctx, claims.Subject, claims.Email, claims.PreferredUsername, claims.TenantID)
+	return s.GetOrCreateUser(ctx, claims.Subject, claims.Email, claims.PreferredUsername, claims.TenantID, claims.GivenName, claims.FamilyName)
 }
 
 func (s *UserBusinessLogic) GetCurrentUser(ctx context.Context, token string) (*db.User, error) {

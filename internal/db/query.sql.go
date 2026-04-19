@@ -14,11 +14,11 @@ import (
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
-    external_id, email, username, tenant_id
+    external_id, email, username, tenant_id, first_name, last_name
 ) VALUES (
-    $1, $2, $3, $4
+    $1, $2, $3, $4, $5, $6
 )
-RETURNING id, external_id, email, username, tenant_id, created_at, updated_at
+RETURNING id, external_id, email, username, tenant_id, created_at, updated_at, first_name, last_name
 `
 
 type CreateUserParams struct {
@@ -26,6 +26,8 @@ type CreateUserParams struct {
 	Email      string         `json:"email"`
 	Username   string         `json:"username"`
 	TenantID   sql.NullString `json:"tenant_id"`
+	FirstName  string         `json:"first_name"`
+	LastName   string         `json:"last_name"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -34,6 +36,8 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.Email,
 		arg.Username,
 		arg.TenantID,
+		arg.FirstName,
+		arg.LastName,
 	)
 	var i User
 	err := row.Scan(
@@ -44,12 +48,14 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.TenantID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.FirstName,
+		&i.LastName,
 	)
 	return i, err
 }
 
 const getUserByExternalID = `-- name: GetUserByExternalID :one
-SELECT id, external_id, email, username, tenant_id, created_at, updated_at FROM users
+SELECT id, external_id, email, username, tenant_id, created_at, updated_at, first_name, last_name FROM users
 WHERE external_id = $1 LIMIT 1
 `
 
@@ -64,12 +70,14 @@ func (q *Queries) GetUserByExternalID(ctx context.Context, externalID string) (U
 		&i.TenantID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.FirstName,
+		&i.LastName,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, external_id, email, username, tenant_id, created_at, updated_at FROM users
+SELECT id, external_id, email, username, tenant_id, created_at, updated_at, first_name, last_name FROM users
 WHERE id = $1 LIMIT 1
 `
 
@@ -84,6 +92,8 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.TenantID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.FirstName,
+		&i.LastName,
 	)
 	return i, err
 }
@@ -94,16 +104,20 @@ SET
     email = $2,
     username = $3,
     tenant_id = $4,
+    first_name = $5,
+    last_name = $6,
     updated_at = NOW()
 WHERE id = $1
-RETURNING id, external_id, email, username, tenant_id, created_at, updated_at
+RETURNING id, external_id, email, username, tenant_id, created_at, updated_at, first_name, last_name
 `
 
 type UpdateUserParams struct {
-	ID       uuid.UUID      `json:"id"`
-	Email    string         `json:"email"`
-	Username string         `json:"username"`
-	TenantID sql.NullString `json:"tenant_id"`
+	ID        uuid.UUID      `json:"id"`
+	Email     string         `json:"email"`
+	Username  string         `json:"username"`
+	TenantID  sql.NullString `json:"tenant_id"`
+	FirstName string         `json:"first_name"`
+	LastName  string         `json:"last_name"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
@@ -112,6 +126,8 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		arg.Email,
 		arg.Username,
 		arg.TenantID,
+		arg.FirstName,
+		arg.LastName,
 	)
 	var i User
 	err := row.Scan(
@@ -122,6 +138,8 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.TenantID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.FirstName,
+		&i.LastName,
 	)
 	return i, err
 }
