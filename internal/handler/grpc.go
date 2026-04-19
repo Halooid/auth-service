@@ -50,3 +50,51 @@ func (h *AuthHandler) GetUserById(ctx context.Context, req *authv1.GetUserByIdRe
 		},
 	}, nil
 }
+
+func (h *AuthHandler) Login(ctx context.Context, req *authv1.LoginRequest) (*authv1.LoginResponse, error) {
+	resp, err := h.logic.Login(ctx, req.Username, req.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	return &authv1.LoginResponse{
+		AccessToken:      resp.AccessToken,
+		RefreshToken:     resp.RefreshToken,
+		ExpiresIn:        resp.ExpiresIn,
+		RefreshExpiresIn: resp.RefreshExpiresIn,
+		TokenType:        resp.TokenType,
+	}, nil
+}
+
+func (h *AuthHandler) RefreshToken(ctx context.Context, req *authv1.RefreshTokenRequest) (*authv1.RefreshTokenResponse, error) {
+	resp, err := h.logic.RefreshToken(ctx, req.RefreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return &authv1.RefreshTokenResponse{
+		AccessToken:      resp.AccessToken,
+		RefreshToken:     resp.RefreshToken,
+		ExpiresIn:        resp.ExpiresIn,
+		RefreshExpiresIn: resp.RefreshExpiresIn,
+		TokenType:        resp.TokenType,
+	}, nil
+}
+
+func (h *AuthHandler) ValidateToken(ctx context.Context, req *authv1.ValidateTokenRequest) (*authv1.ValidateTokenResponse, error) {
+	user, err := h.logic.ValidateToken(ctx, req.AccessToken)
+	if err != nil {
+		return &authv1.ValidateTokenResponse{Valid: false}, nil
+	}
+
+	return &authv1.ValidateTokenResponse{
+		Valid: true,
+		User: &authv1.User{
+			Id:         user.ID.String(),
+			ExternalId: user.ExternalID,
+			Email:      user.Email,
+			Username:   user.Username,
+			TenantId:   user.TenantID.String,
+		},
+	}, nil
+}

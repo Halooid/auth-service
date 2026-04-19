@@ -6,16 +6,23 @@ import (
 	"fmt"
 
 	"github.com/halooid/backend/auth-service/internal/db"
+	"github.com/halooid/backend/go-shared/auth"
 	"github.com/google/uuid"
 )
 
 // UserBusinessLogic handles user domain operations
 type UserBusinessLogic struct {
-	repo db.Querier
+	repo      db.Querier
+	keycloak  *KeycloakClient
+	validator *auth.Validator
 }
 
-func NewUserBusinessLogic(repo db.Querier) *UserBusinessLogic {
-	return &UserBusinessLogic{repo: repo}
+func NewUserBusinessLogic(repo db.Querier, keycloak *KeycloakClient, validator *auth.Validator) *UserBusinessLogic {
+	return &UserBusinessLogic{
+		repo:      repo,
+		keycloak:  keycloak,
+		validator: validator,
+	}
 }
 
 func (s *UserBusinessLogic) GetOrCreateUser(ctx context.Context, extID, email, username, tenantID string) (*db.User, error) {
@@ -50,4 +57,23 @@ func (s *UserBusinessLogic) GetUserByID(ctx context.Context, id string) (*db.Use
 	}
 
 	return &user, nil
+}
+
+func (s *UserBusinessLogic) Login(ctx context.Context, username, password string) (*TokenResponse, error) {
+	return s.keycloak.Login(ctx, username, password)
+}
+
+func (s *UserBusinessLogic) RefreshToken(ctx context.Context, refreshToken string) (*TokenResponse, error) {
+	return s.keycloak.RefreshToken(ctx, refreshToken)
+}
+
+func (s *UserBusinessLogic) ValidateToken(ctx context.Context, token string) (*db.User, error) {
+	claims, err := s.validator.Validate(token)
+	if err != nil {
+		return nil, fmt.Errorf("token validation failed: %w", err)
+	}
+
+	// Sync or get user
+	return s.GetOrCreateUser(ctx, claims.Subject, claims.Email, claims.PreferredUsername, claims.TenantID)
+
 }
