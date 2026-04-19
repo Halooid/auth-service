@@ -3,6 +3,7 @@ module github.com/halooid/backend/auth-service
 go 1.25.0
 
 require (
+	github.com/Nerzal/gocloak/v13 v13.9.0
 	github.com/google/uuid v1.6.0
 	github.com/halooid/backend/go-shared v0.0.0-00010101000000-000000000000
 	github.com/jackc/pgx/v5 v5.9.2
@@ -12,7 +13,6 @@ require (
 
 require (
 	github.com/MicahParks/keyfunc/v2 v2.1.0 // indirect
-	github.com/Nerzal/gocloak/v13 v13.9.0 // indirect
 	github.com/go-resty/resty/v2 v2.7.0 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
