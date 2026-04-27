@@ -28,10 +28,6 @@ WORKDIR /app
 
 COPY --from=builder /app/auth-service .
 
-# Default environment variables
-# ENV GRPC_PORT=50051
-# ENV DATABASE_URL=postgres://keycloak:keycloak@postgres:5432/keycloak?sslmode=disable
-
 EXPOSE 50051
 
 CMD ["./auth-service"]
